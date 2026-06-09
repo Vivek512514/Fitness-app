@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0c0c10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fitness">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>My Fitness Plan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0c0c10;--surface:#14141c;--surface2:#1a1a24;--border:#1e1e2e;--border2:#2a2a3a;
+  --accent:#818cf8;--accent-dim:rgba(129,140,248,0.12);
+  --green:#4ade80;--green-dim:rgba(74,222,128,0.1);
+  --yellow:#fbbf24;--red:#f87171;--purple:#e879f9;
+  --text:#e2e2ea;--muted:#6b6b80;--muted2:#4a4a5a;--r:12px;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
+.hdr{background:linear-gradient(160deg,#12121e 0%,#1a1030 60%,#0e1a30 100%);padding:calc(16px + var(--safe-top)) 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.hdr-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.hdr h1{font-size:19px;font-weight:700;letter-spacing:-.5px;color:#fff}
+.hdr p{font-size:11px;color:var(--muted);margin-top:3px}
+.notify-btn{background:var(--accent-dim);border:1px solid rgba(129,140,248,0.3);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.notify-btn.on{background:rgba(74,222,128,0.12);border-color:rgba(74,222,128,0.3);color:var(--green)}
+.streak-bar{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:11px 14px;}
+.tabs{display:flex;background:#111118;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:12px 15px;font-size:11px;font-weight:600;letter-spacing:.4px;color:var(--muted);border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;white-space:nowrap;text-transform:uppercase;transition:color .2s,border-color .2s;flex-shrink:0;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + var(--safe-bottom))}
+.section{padding:18px 16px;display:none}
+.section.active{display:block}
+.day-lbl{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--accent);text-transform:uppercase;margin-bottom:4px}
+.big-title{font-size:21px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
+.subtitle{font-size:12px;color:var(--muted);margin-bottom:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.highlight{background:var(--accent-dim);border:1px solid rgba(129,140,248,0.25);border-radius:var(--r);padding:14px;margin-bottom:14px;font-size:13px;line-height:1.7}
+.ex-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:border-color .2s,background .2s;}
+.ex-card.done{border-color:rgba(74,222,128,.35);background:var(--green-dim)}
+.ex-check{width:28px;height:28px;border-radius:50%;flex-shrink:0;border:2px solid var(--border2);background:transparent;color:transparent;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
+.ex-card.done .ex-check{background:var(--green);border-color:var(--green);color:#000}
+.ex-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.ex-detail{font-size:11px;color:var(--muted)}
+.ex-tag{font-size:9px;font-weight:700;letter-spacing:.5px;padding:3px 7px;border-radius:20px;text-transform:uppercase;flex-shrink:0}
+.primary-btn{width:100%;padding:15px;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;transition:all .2s;}
+.primary-btn:disabled{background:var(--surface2);color:var(--muted2);cursor:not-allowed}
+.primary-btn.done-btn{background:var(--green);color:#000}
+.rest-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 20px;text-align:center}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:18px}
+.wday{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 2px;text-align:center}
+.wday.today{border-color:var(--accent)}.wday.done{background:var(--green-dim);border-color:rgba(74,222,128,.3)}
+.wday-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.wday-dot{width:18px;height:18px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:9px}
+.wday.done .wday-dot{background:var(--green);color:#000}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.stat-val{font-size:28px;font-weight:700;line-height:1;margin-bottom:4px}
+.stat-lbl{font-size:11px;color:var(--muted)}
+.phase-block{border-bottom:1px solid var(--border);padding-bottom:20px;margin-bottom:20px}
+.plan-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.plan-day{font-size:11px;font-weight:600;color:var(--muted);width:32px;flex-shrink:0;padding-top:2px}
+.rest-badge{font-size:10px;font-weight:600;color:var(--muted2);background:var(--surface2);padding:2px 8px;border-radius:20px}
+.log-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:18px}
+.form-label{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-bottom:5px}
+.mood-row{display:flex;gap:6px;margin-bottom:12px}
+.mood-btn{flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:20px;cursor:pointer;text-align:center;transition:all .2s}
+.mood-btn.sel{border-color:var(--accent);background:var(--accent-dim)}
+.note-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:10px 12px;outline:none;resize:none;transition:border-color .2s;display:block}
+.note-input:focus{border-color:var(--accent)}
+.save-btn{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:10px;transition:all .2s}
+.log-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:9px}
+.guide-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:9px}
+.g-pt{font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:3px}
+.g-why{color:var(--accent)}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin:20px 0 10px}
+.install-banner{background:var(--accent-dim);border:1px solid rgba(129,140,248,.3);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;}
+.toast{position:fixed;bottom:calc(24px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#000;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:700;transition:transform .3s ease;z-index:999;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-top">
+    <div><h1>My Fitness Plan 💪</h1><p>12-week recomposition · Mon / Wed / Fri</p></div>
+    <button class="notify-btn" id="notifyBtn" onclick="toggleNotifications()">🔔 Reminders</button>
+  </div>
+  <div class="streak-bar">
+    <div style="font-size:26px">🔥</div>
+    <div style="flex:1">
+      <div style="font-size:24px;font-weight:700;color:var(--yellow);line-height:1" id="streakNum">0</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">day streak</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:17px;font-weight:700" id="totalNum">0</div>
+      <div style="font-size:10px;color:var(--muted)">sessions done</div>
+    </div>
+  </div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('today',this)">Today</button>
+  <button class="tab" onclick="switchTab('progress',this)">Progress</button>
+  <button class="tab" onclick="switchTab('plan',this)">Plan</button>
+  <button class="tab" onclick="switchTab('log',this)">Journal</button>
+  <button class="tab" onclick="switchTab('guide',this)">Guide</button>
+</div>
+<div class="content">
+  <div class="section active" id="sec-today">
+    <div id="install-banner"></div>
+    <div class="day-lbl" id="todayLabel"></div>
+    <div class="big-title" id="todayTitle"></div>
+    <div class="subtitle" id="todaySubtitle"></div>
+    <div id="todayBody"></div>
+  </div>
+  <div class="section" id="sec-progress">
+    <div class="day-lbl">This Week</div>
+    <div class="big-title" style="margin-bottom:16px">Your Progress</div>
+    <div class="week-grid" id="weekGrid"></div>
+    <div class="stat-grid" id="statGrid"></div>
+    <div class="highlight"><strong style="color:var(--accent)">Reminder: </strong>Measure your waist every 2 weeks. Results show in the mirror before the scale. Real change comes at week 3+.</div>
+  </div>
+  <div class="section" id="sec-plan">
+    <div class="day-lbl">12-Week Program</div>
+    <div class="big-title" style="margin-bottom:4px">Full Roadmap</div>
+    <div class="subtitle">Mon · Wed · Fri · Evening · ~25–30 min</div>
+    <div id="planBody"></div>
+  </div>
+  <div class="section" id="sec-log">
+    <div class="day-lbl">Session Journal</div>
+    <div class="big-title" style="margin-bottom:18px">Log Entry</div>
+    <div class="log-form">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px">How was today?</div>
+      <div class="form-label">Mood</div>
+      <div class="mood-row" id="moodRow"></div>
+      <div class="form-label">Effort: <span id="effortDisplay">7</span>/10</div>
+      <input type="range" min="1" max="10" value="7" id="effortSlider" oninput="document.getElementById('effortDisplay').textContent=this.value" style="width:100%;accent-color:var(--accent);margin-bottom:12px">
+      <div class="form-label">Notes</div>
+      <textarea class="note-input" id="logNote" rows="3" placeholder="e.g. Squats felt easy. Push-ups hard at rep 9. Tired but pushed through..."></textarea>
+      <button class="save-btn" onclick="saveLog()">Save Entry</button>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px">Past Entries</div>
+    <div id="logList"></div>
+  </div>
+  <div class="section" id="sec-guide">
+    <div class="day-lbl">Reference</div>
+    <div class="big-title" style="margin-bottom:18px">How & Why</div>
+    <div class="sec-lbl">Exercise Technique</div>
+    <div class="guide-card" style="border-left:3px solid #818cf8"><h4 style="color:#818cf8;font-size:13px;font-weight:700;margin-bottom:9px">Squats</h4><div class="g-pt">· Feet shoulder-width, toes slightly out</div><div class="g-pt">· Chest up, core tight throughout</div><div class="g-pt">· Thighs parallel to floor at the bottom</div><div class="g-pt">· Drive through heels to stand</div><div class="g-pt g-why">💡 Biggest muscle group → most testosterone → fat loss</div></div>
+    <div class="guide-card" style="border-left:3px solid #f87171"><h4 style="color:#f87171;font-size:13px;font-weight:700;margin-bottom:9px">Push-ups</h4><div class="g-pt">· Hands slightly wider than shoulders</div><div class="g-pt">· Body in a straight plank line — no sagging hips</div><div class="g-pt">· Lower chest to ~1 inch from floor</div><div class="g-pt">· Can't do full ones? Start on knees — completely fine</div><div class="g-pt g-why">💡 Directly targets chest. Muscle shows as fat reduces</div></div>
+    <div class="guide-card" style="border-left:3px solid #4ade80"><h4 style="color:#4ade80;font-size:13px;font-weight:700;margin-bottom:9px">Dumbbell Rows</h4><div class="g-pt">· One hand/knee on bench, back flat</div><div class="g-pt">· Pull dumbbell to hip, squeeze at top</div><div class="g-pt">· Don't rotate your torso</div><div class="g-pt g-why">💡 Back strength + posture makes chest look flatter immediately</div></div>
+    <div class="guide-card" style="border-left:3px solid #fbbf24"><h4 style="color:#fbbf24;font-size:13px;font-weight:700;margin-bottom:9px">Plank</h4><div class="g-pt">· Forearms on floor, body straight</div><div class="g-pt">· Squeeze abs and glutes — breathe normally</div><div class="g-pt">· Start 20 sec if needed, build from there</div><div class="g-pt g-why">💡 Core stability protects your lower back in all other exercises</div></div>
+    <div class="sec-lbl">Diet Reminders</div>
+    <div class="guide-card"><div class="g-pt">· Protein first at every meal — eggs, paneer, dal, chicken, curd</div><div class="g-pt">· Reduce white rice portions; fill rest with vegetables</div><div class="g-pt">· Eat at regular times — skipping then binging worsens insulin resistance</div><div class="g-pt">· Water: minimum 2.5–3 litres daily</div><div class="g-pt g-why">💡 80% consistency for months beats 100% for 2 weeks then quitting</div></div>
+    <div class="sec-lbl">Bloodwork — Do This Soon</div>
+    <div class="highlight" style="border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.06)"><strong style="color:var(--red)">Important: </strong>Your chest fat + fatigue may have a hormonal cause. Exercise alone won't fully fix it without this.</div>
+    <div class="guide-card"><div class="g-pt">· Total Testosterone + Free Testosterone</div><div class="g-pt">· Estradiol (E2)</div><div class="g-pt">· TSH, T3, T4 — thyroid panel</div><div class="g-pt">· Fasting insulin + glucose</div><div class="g-pt">· LH, FSH (if testosterone comes back low)</div></div>
+    <div class="sec-lbl">Checking In With Claude</div>
+    <div class="guide-card"><div class="g-pt" style="margin-bottom:8px">After each session, open Claude and say:</div><div style="font-size:12px;color:var(--text);font-style:italic;background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:8px;line-height:1.7">"Week 2 Day 3 done. Squats 3×12, push-ups 3×8, rows 3×10, plank 25s. Felt tired. Struggling with push-ups."</div><div class="g-pt">Specific feedback and adjustments every time.</div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const PHASES=[
+  {label:"Phase 1 — Foundation",weeks:"Weeks 1–4",desc:"Build the habit. Learn the movements. Don't go to failure.",exercises:[{name:"Bodyweight Squats",detail:"3 × 12",tag:"legs",color:"#818cf8"},{name:"Push-ups",detail:"3 × 10 (knees ok)",tag:"chest",color:"#f87171"},{name:"Dumbbell Rows",detail:"3 × 12 each side",tag:"back",color:"#4ade80"},{name:"Plank Hold",detail:"3 × 20 sec",tag:"core",color:"#fbbf24"}]},
+  {label:"Phase 2 — Build",weeks:"Weeks 5–8",desc:"Add load. This is where body composition starts shifting.",exercises:[{name:"Goblet Squats",detail:"4 × 12",tag:"legs",color:"#818cf8"},{name:"Push-ups (full)",detail:"4 × 12",tag:"chest",color:"#f87171"},{name:"Dumbbell Rows (heavier)",detail:"4 × 12",tag:"back",color:"#4ade80"},{name:"Shoulder Press",detail:"3 × 10",tag:"full",color:"#e879f9"},{name:"Plank Hold",detail:"3 × 35 sec",tag:"core",color:"#fbbf24"}]},
+  {label:"Phase 3 — Intensity",weeks:"Weeks 9–12",desc:"Push harder. Visible results solidify here. Don't quit now.",exercises:[{name:"Dumbbell Squats",detail:"4 × 15",tag:"legs",color:"#818cf8"},{name:"Incline Push-ups / Chest Press",detail:"4 × 15",tag:"chest",color:"#f87171"},{name:"Dumbbell Rows",detail:"4 × 15 each side",tag:"back",color:"#4ade80"},{name:"Shoulder Press",detail:"4 × 12",tag:"full",color:"#e879f9"},{name:"Bicycle Crunches",detail:"3 × 20",tag:"core",color:"#fbbf24"},{name:"Plank",detail:"3 × 45 sec",tag:"core",color:"#fbbf24"}]}
+];
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const WD=new Set([1,3,5]);
+const MOODS=["😴","😐","🙂","💪","🔥"];
+function td(){return new Date().toISOString().split("T")[0]}
+function dow(){return new Date().getDay()}
+let state=JSON.parse(localStorage.getItem("fitness_v2")||"null")||{startDate:td(),completedDays:[],exerciseDone:{},logs:[],notifEnabled:false,installDismissed:false};
+function save(){localStorage.setItem("fitness_v2",JSON.stringify(state))}
+function weekNum(){const diff=Math.floor((new Date(td())-new Date(state.startDate))/86400000);return Math.min(12,Math.max(1,Math.floor(diff/7)+1))}
+function phaseIdx(w){return w<=4?0:w<=8?1:2}
+function streak(){
+  if(!state.completedDays.length)return 0;
+  const s=[...state.completedDays].sort().reverse();let st=0;
+  for(let i=0;i<s.length;i++){
+    const ago=Math.floor((new Date(td())-new Date(s[i]))/86400000);
+    if(i===0&&ago>3)return 0;
+    if(i>0&&Math.floor((new Date(s[i-1])-new Date(s[i]))/86400000)>4)break;
+    st++;
+  }
+  return st;
+}
+function nextWD(){const d=dow();for(let i=1;i<=7;i++)if(WD.has((d+i)%7))return DAYS[(d+i)%7];return"Monday"}
+function weekDates(){const d=new Date();d.setDate(d.getDate()-dow());return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(x.getDate()+i);return x.toISOString().split("T")[0]})}
+// Install
+let deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;if(!state.installDismissed)showInstallBanner();});
+function showInstallBanner(){document.getElementById("install-banner").innerHTML=`<div class="install-banner"><p style="flex:1;font-size:12px;line-height:1.5"><strong style="color:var(--accent)">Install as App</strong><br>Add to your home screen</p><button style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer" onclick="doInstall()">Install</button><button style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;margin-left:8px" onclick="dismissInstall()">×</button></div>`}
+function doInstall(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt=null;}dismissInstall()}
+function dismissInstall(){state.installDismissed=true;save();document.getElementById("install-banner").innerHTML=""}
+// Notifications
+async function toggleNotifications(){
+  if(!("Notification"in window)){showToast("Not supported on this browser");return}
+  if(state.notifEnabled){state.notifEnabled=false;save();updateNotifyBtn();showToast("Reminders turned off");return}
+  const p=await Notification.requestPermission();
+  if(p!=="granted"){showToast("Permission denied — check browser settings");return}
+  state.notifEnabled=true;save();updateNotifyBtn();scheduleNext();
+  showToast("🔔 Reminders on! Mon/Wed/Fri at 7 PM");
+}
+function updateNotifyBtn(){const b=document.getElementById("notifyBtn");if(state.notifEnabled){b.textContent="✅ Reminders On";b.classList.add("on")}else{b.textContent="🔔 Reminders";b.classList.remove("on")}}
+function scheduleNext(){
+  if(!state.notifEnabled)return;
+  const now=new Date(),d=now.getDay();
+  for(let i=1;i<=7;i++){
+    const nd=(d+i)%7;
+    if(WD.has(nd)){
+      const t=new Date();t.setDate(t.getDate()+i);t.setHours(19,0,0,0);
+      const delay=t-now;
+      if(delay>0)setTimeout(()=>{if(state.notifEnabled)new Notification("Workout Time 💪",{body:"7 PM — time for your "+PHASES[phaseIdx(weekNum())].label+" session!",icon:"/icon-192.png",tag:"workout",requireInteraction:true});scheduleNext();},delay);
+      break;
+    }
+  }
+}
+// Today
+function renderToday(){
+  const wn=weekNum(),pi=phaseIdx(wn),ph=PHASES[pi];
+  const isW=WD.has(dow()),done=state.completedDays.includes(td()),exDone=state.exerciseDone[td()]||[];
+  const dayName=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][dow()];
+  document.getElementById("todayLabel").textContent=`Week ${wn} · ${dayName}`;
+  if(!isW){
+    document.getElementById("todayTitle").textContent="Rest Day 🛌";
+    document.getElementById("todaySubtitle").textContent="Recovery is part of the program";
+    document.getElementById("todayBody").innerHTML=`<div class="rest-card"><div style="font-size:44px;margin-bottom:12px">🧘</div><h3 style="font-size:17px;font-weight:700;margin-bottom:8px">Active Rest</h3><p style="font-size:13px;color:var(--muted);line-height:1.7">Your muscles grow during rest. Take a walk, stretch, or relax. No gym today.</p><div style="margin-top:14px;font-size:13px;color:var(--accent);font-weight:600">Next workout: ${nextWD()}</div></div>`;
+    return;
+  }
+  document.getElementById("todayTitle").textContent=ph.label;
+  document.getElementById("todaySubtitle").textContent=`${ph.exercises.length} exercises · ~25–30 min · 60 sec rest`;
+  let html="";
+  ph.exercises.forEach((ex,i)=>{
+    const d=exDone.includes(i);
+    html+=`<div class="ex-card ${d?"done":""}" id="ec${i}"><button class="ex-check" onclick="toggleEx(${i})">${d?"✓":""}</button><div style="flex:1"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.detail}</div></div><span class="ex-tag" style="background:${ex.color}20;color:${ex.color}">${ex.tag}</span></div>`;
+  });
+  html+=`<button class="primary-btn ${done?"done-btn":""}" id="cBtn" onclick="markComplete()" ${done?"disabled":""}>${done?"✅ Session Complete!":"Mark Session Complete"}</button>`;
+  document.getElementById("todayBody").innerHTML=html;
+}
+function toggleEx(i){if(!state.exerciseDone[td()])state.exerciseDone[td()]=[];const a=state.exerciseDone[td()],idx=a.indexOf(i);if(idx===-1)a.push(i);else a.splice(idx,1);save();renderToday()}
+function markComplete(){if(!state.completedDays.includes(td())){state.completedDays.push(td());save();showToast("🔥 Session logged! Keep going!");updateHeader()}renderToday()}
+// Progress
+function renderProgress(){
+  const dates=weekDates(),st=streak(),wn=weekNum(),wd=dates.filter(d=>state.completedDays.includes(d)).length;
+  document.getElementById("weekGrid").innerHTML=dates.map((date,i)=>{const d=state.completedDays.includes(date),r=!WD.has(i),t=date===td();return`<div class="wday ${d?"done":""} ${r?"rest":""} ${t?"today":""}"><div class="wday-lbl">${DAYS[i]}</div><div class="wday-dot">${d?"✓":r?"–":""}</div></div>`}).join("");
+  document.getElementById("statGrid").innerHTML=[{v:wd,l:"This week",c:"var(--green)"},{v:st,l:"Day streak 🔥",c:"var(--yellow)"},{v:wn,l:"Current week",c:"var(--accent)"},{v:state.completedDays.length,l:"Total sessions",c:"var(--red)"}].map(s=>`<div class="stat-card"><div class="stat-val" style="color:${s.c}">${s.v}</div><div class="stat-lbl">${s.l}</div></div>`).join("");
+}
+// Plan
+function renderPlan(){
+  const cp=phaseIdx(weekNum()),dm=[1,2,3,4,5,6,0];
+  document.getElementById("planBody").innerHTML=PHASES.map((ph,pi)=>`<div class="phase-block"><div style="font-size:14px;font-weight:700;color:${pi===cp?"var(--accent)":"var(--text)"};margin-bottom:4px">${ph.label}${pi===cp?`<span style="font-size:9px;background:var(--accent-dim);color:var(--accent);padding:2px 7px;border-radius:20px;margin-left:6px;vertical-align:middle">Current</span>`:""}</div><div style="font-size:11px;color:var(--muted);margin-bottom:12px">${ph.weeks} · ${ph.desc}</div>${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day,di)=>{const iw=WD.has(dm[di]);return`<div class="plan-row"><div class="plan-day">${day}</div><div style="flex:1">${iw?`<div style="font-size:12px;font-weight:600;margin-bottom:3px">Full Body Strength</div><div style="font-size:11px;color:var(--muted);line-height:1.7">${ph.exercises.map(e=>e.name+" · "+e.detail).join(" / ")}</div>`:`<span class="rest-badge">Rest</span>`}</div></div>`}).join("")}</div>`).join("");
+}
+// Log
+let selMood="🙂";
+function initMoods(){document.getElementById("moodRow").innerHTML=MOODS.map(m=>`<button class="mood-btn ${m===selMood?"sel":""}" onclick="selM('${m}')">${m}</button>`).join("")}
+function selM(m){selMood=m;document.querySelectorAll(".mood-btn").forEach((b,i)=>b.classList.toggle("sel",MOODS[i]===m))}
+function saveLog(){const n=document.getElementById("logNote").value.trim(),e=parseInt(document.getElementById("effortSlider").value);if(!n){showToast("Write a note first!");return}state.logs.unshift({date:td(),mood:selMood,effort:e,note:n});if(state.logs.length>30)state.logs=state.logs.slice(0,30);save();document.getElementById("logNote").value="";renderLogList();showToast("Entry saved ✓")}
+function renderLogList(){const el=document.getElementById("logList");if(!state.logs.length){el.innerHTML=`<div style="text-align:center;padding:28px 0;color:var(--muted);font-size:13px">No entries yet. Log after your first session.</div>`;return}el.innerHTML=state.logs.map(l=>`<div class="log-entry"><div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:10px;color:var(--muted)">${l.date}</span><span style="font-size:18px">${l.mood}</span></div><div style="font-size:12px;line-height:1.6">${l.note}</div><div style="font-size:11px;color:var(--yellow);margin-top:5px">${"★".repeat(Math.round(l.effort/2))}${"☆".repeat(5-Math.round(l.effort/2))} ${l.effort}/10</div></div>`).join("")}
+// Tabs
+function switchTab(n,btn){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));document.getElementById("sec-"+n).classList.add("active");btn.classList.add("active");if(n==="progress")renderProgress();if(n==="plan")renderPlan();if(n==="log")renderLogList()}
+// Header
+function updateHeader(){document.getElementById("streakNum").textContent=streak();document.getElementById("totalNum").textContent=state.completedDays.length}
+// Toast
+function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2500)}
+// SW
+if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
+// Init
+updateHeader();updateNotifyBtn();renderToday();initMoods();
+if(state.notifEnabled)scheduleNext();
+</script>
+</body>
+</html>
