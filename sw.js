@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitness-v1';
+const CACHE_NAME = 'fitness-v2';
 const ASSETS = ['/', '/index.html'];
 
 // Install — cache the app shell
@@ -19,16 +19,39 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch — serve from cache, fallback to network
+// Fetch — network-first for the app shell (so updates show up immediately),
+// falling back to cache only when offline. Other requests stay cache-first.
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
-  );
+  const isAppShell =
+    e.request.mode === 'navigate' ||
+    e.request.url.endsWith('/index.html');
+
+  if (isAppShell) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  } else {
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || fetch(e.request))
+    );
+  }
 });
 
 // Push notification received
 self.addEventListener('push', e => {
-  const data = e.data ? e.data.json() : { title: 'Workout Time 💪', body: "It's time for your session. Let's go!" };
+  const data = e.data
+    ? e.data.json()
+    : {
+        title: 'Workout Time 💪',
+        body: "It's time for your session. Let's go!"
+      };
+
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
@@ -48,6 +71,7 @@ self.addEventListener('push', e => {
 // Notification click
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+
   if (e.action !== 'dismiss') {
     e.waitUntil(clients.openWindow('/'));
   }
