@@ -83,12 +83,31 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 .install-banner{background:var(--accent-dim);border:1px solid rgba(129,140,248,.3);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;}
 .toast{position:fixed;bottom:calc(24px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#000;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:700;transition:transform .3s ease;z-index:999;white-space:nowrap;pointer-events:none;}
 .toast.show{transform:translateX(-50%) translateY(0)}
+.day-chip-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.day-chip{flex:1;min-width:36px;padding:9px 0;text-align:center;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
+.day-chip.sel{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.exlib-row{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.exlib-hdr{display:flex;align-items:center;gap:10px;cursor:pointer}
+.exlib-hdr input{width:18px;height:18px;flex-shrink:0;accent-color:var(--accent)}
+.exlib-detail-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;padding:7px 9px;margin-top:6px;font-family:inherit;outline:none}
+.builder-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-top:14px}
+.name-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:11px 12px;margin-bottom:16px;font-family:inherit;outline:none}
+.name-input:focus{border-color:var(--accent)}
+.builder-actions{display:flex;gap:10px;margin-top:16px}
+.duration-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;font-size:12px;color:var(--muted)}
+.small-num-input{width:60px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:7px;font-family:inherit;text-align:center}
+.custom-add-row{display:flex;gap:6px;margin-top:10px}
+.custom-add-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:9px;font-family:inherit;outline:none}
+.add-chip-btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.remove-x{color:var(--red);cursor:pointer;font-weight:700;padding:0 4px;font-size:14px}
+.routine-actions{display:flex;gap:8px;margin-top:10px}
+.routine-actions .save-btn{margin-top:0}
 </style>
 </head>
 <body>
 <div class="hdr">
   <div class="hdr-top">
-    <div><h1>My Fitness Plan 💪</h1><p>12-week recomposition · Mon / Wed / Fri</p></div>
+    <div><h1>My Fitness Plan 💪</h1><p id="hdrSubtitle">12-week recomposition · Mon / Wed / Fri</p></div>
     <button class="notify-btn" id="notifyBtn" onclick="toggleNotifications()">🔔 Reminders</button>
   </div>
   <div class="streak-bar">
@@ -107,6 +126,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   <button class="tab active" onclick="switchTab('today',this)">Today</button>
   <button class="tab" onclick="switchTab('progress',this)">Progress</button>
   <button class="tab" onclick="switchTab('plan',this)">Plan</button>
+  <button class="tab" onclick="switchTab('routines',this)">Routines</button>
   <button class="tab" onclick="switchTab('log',this)">Journal</button>
   <button class="tab" onclick="switchTab('guide',this)">Guide</button>
 </div>
@@ -130,6 +150,14 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
     <div class="big-title" style="margin-bottom:4px">Full Roadmap</div>
     <div class="subtitle">Mon · Wed · Fri · Evening · ~25–30 min</div>
     <div id="planBody"></div>
+  </div>
+  <div class="section" id="sec-routines">
+    <div class="day-lbl">Your Programs</div>
+    <div class="big-title" style="margin-bottom:4px">Routines</div>
+    <div class="subtitle">Pick what's active, or build your own</div>
+    <div id="routineList"></div>
+    <button class="primary-btn" id="newRoutineBtn" onclick="openBuilder()">+ Create Custom Routine</button>
+    <div id="builderWrap"></div>
   </div>
   <div class="section" id="sec-log">
     <div class="day-lbl">Session Journal</div>
@@ -172,12 +200,56 @@ const PHASES=[
   {label:"Phase 3 — Intensity",weeks:"Weeks 9–12",desc:"Push harder. Visible results solidify here. Don't quit now.",exercises:[{name:"Dumbbell Squats",detail:"4 × 15",tag:"legs",color:"#818cf8"},{name:"Incline Push-ups / Chest Press",detail:"4 × 15",tag:"chest",color:"#f87171"},{name:"Dumbbell Rows",detail:"4 × 15 each side",tag:"back",color:"#4ade80"},{name:"Shoulder Press",detail:"4 × 12",tag:"full",color:"#e879f9"},{name:"Bicycle Crunches",detail:"3 × 20",tag:"core",color:"#fbbf24"},{name:"Plank",detail:"3 × 45 sec",tag:"core",color:"#fbbf24"}]}
 ];
 const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const WD=new Set([1,3,5]);
 const MOODS=["😴","😐","🙂","💪","🔥"];
+const EXLIB=[
+  {name:"Bodyweight Squats",tag:"legs",color:"#818cf8",defDetail:"3 × 12"},
+  {name:"Push-ups",tag:"chest",color:"#f87171",defDetail:"3 × 10"},
+  {name:"Dumbbell Rows",tag:"back",color:"#4ade80",defDetail:"3 × 12 each side"},
+  {name:"Plank Hold",tag:"core",color:"#fbbf24",defDetail:"3 × 30 sec"},
+  {name:"Lunges",tag:"legs",color:"#818cf8",defDetail:"3 × 10 each leg"},
+  {name:"Shoulder Press",tag:"shoulders",color:"#e879f9",defDetail:"3 × 10"},
+  {name:"Glute Bridges",tag:"legs",color:"#818cf8",defDetail:"3 × 15"},
+  {name:"Bicep Curls",tag:"arms",color:"#60a5fa",defDetail:"3 × 12"},
+  {name:"Tricep Dips",tag:"arms",color:"#60a5fa",defDetail:"3 × 12"},
+  {name:"Mountain Climbers",tag:"cardio",color:"#fb923c",defDetail:"3 × 20"},
+  {name:"Bicycle Crunches",tag:"core",color:"#fbbf24",defDetail:"3 × 20"},
+  {name:"Superman Hold",tag:"back",color:"#4ade80",defDetail:"3 × 15"},
+  {name:"Wall Sit",tag:"legs",color:"#818cf8",defDetail:"3 × 30 sec"},
+  {name:"Dumbbell Deadlifts",tag:"legs",color:"#818cf8",defDetail:"3 × 10"},
+];
 function td(){return new Date().toISOString().split("T")[0]}
 function dow(){return new Date().getDay()}
 let state=JSON.parse(localStorage.getItem("fitness_v2")||"null")||{startDate:td(),completedDays:[],exerciseDone:{},logs:[],notifEnabled:false,installDismissed:false};
+// Migration: add routine fields without touching existing streak/log data
+if(!state.routines)state.routines=[];
+if(!state.activeRoutineId)state.activeRoutineId="default";
+if(!state.routineStartDates)state.routineStartDates={default:state.startDate||td()};
 function save(){localStorage.setItem("fitness_v2",JSON.stringify(state))}
+// Routine helpers
+function getRoutine(id){
+  if(id==="default")return{id:"default",name:"12-Week Foundation → Build → Intensity",type:"phased",days:[1,3,5]};
+  return state.routines.find(r=>r.id===id);
+}
+function activeRoutine(){
+  let r=getRoutine(state.activeRoutineId);
+  if(!r){state.activeRoutineId="default";r=getRoutine("default");}
+  return r;
+}
+function activeDays(){return new Set(activeRoutine().days)}
+function routineWeekNum(r){
+  const sd=state.routineStartDates[r.id]||td();
+  const diff=Math.floor((new Date(td())-new Date(sd))/86400000);
+  return Math.max(1,Math.floor(diff/7)+1);
+}
+function routineExpired(r){
+  if(r.type==="phased"||!r.durationWeeks)return false;
+  return routineWeekNum(r)>r.durationWeeks;
+}
+function updateHdrSubtitle(){
+  const r=activeRoutine();
+  const dayNames=r.days.slice().sort().map(d=>DAYS[d]).join(" / ");
+  document.getElementById("hdrSubtitle").textContent=r.type==="phased"?`12-week recomposition · ${dayNames}`:`${r.name} · ${dayNames}`;
+}
 function weekNum(){const diff=Math.floor((new Date(td())-new Date(state.startDate))/86400000);return Math.min(12,Math.max(1,Math.floor(diff/7)+1))}
 function phaseIdx(w){return w<=4?0:w<=8?1:2}
 function streak(){
@@ -191,7 +263,7 @@ function streak(){
   }
   return st;
 }
-function nextWD(){const d=dow();for(let i=1;i<=7;i++)if(WD.has((d+i)%7))return DAYS[(d+i)%7];return"Monday"}
+function nextWD(days){const d=dow();for(let i=1;i<=7;i++)if(days.has((d+i)%7))return DAYS[(d+i)%7];return"—"}
 function weekDates(){const d=new Date();d.setDate(d.getDate()-dow());return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(x.getDate()+i);return x.toISOString().split("T")[0]})}
 // Install
 let deferredPrompt=null;
@@ -211,33 +283,50 @@ async function toggleNotifications(){
 function updateNotifyBtn(){const b=document.getElementById("notifyBtn");if(state.notifEnabled){b.textContent="✅ Reminders On";b.classList.add("on")}else{b.textContent="🔔 Reminders";b.classList.remove("on")}}
 function scheduleNext(){
   if(!state.notifEnabled)return;
-  const now=new Date(),d=now.getDay();
+  const now=new Date(),d=now.getDay(),r=activeRoutine(),days=activeDays();
   for(let i=1;i<=7;i++){
     const nd=(d+i)%7;
-    if(WD.has(nd)){
+    if(days.has(nd)){
       const t=new Date();t.setDate(t.getDate()+i);t.setHours(19,0,0,0);
       const delay=t-now;
-      if(delay>0)setTimeout(()=>{if(state.notifEnabled)new Notification("Workout Time 💪",{body:"7 PM — time for your "+PHASES[phaseIdx(weekNum())].label+" session!",icon:"/icon-192.png",tag:"workout",requireInteraction:true});scheduleNext();},delay);
+      const label=r.type==="phased"?PHASES[phaseIdx(weekNum())].label:r.name;
+      if(delay>0)setTimeout(()=>{if(state.notifEnabled)new Notification("Workout Time 💪",{body:"7 PM — time for your "+label+" session!",icon:"/icon-192.png",tag:"workout",requireInteraction:true});scheduleNext();},delay);
       break;
     }
   }
 }
 // Today
 function renderToday(){
-  const wn=weekNum(),pi=phaseIdx(wn),ph=PHASES[pi];
-  const isW=WD.has(dow()),done=state.completedDays.includes(td()),exDone=state.exerciseDone[td()]||[];
+  const r=activeRoutine(),days=activeDays();
+  const isW=days.has(dow()),done=state.completedDays.includes(td()),exDone=state.exerciseDone[td()]||[];
   const dayName=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][dow()];
-  document.getElementById("todayLabel").textContent=`Week ${wn} · ${dayName}`;
+  const wn=r.type==="phased"?weekNum():routineWeekNum(r);
+  document.getElementById("todayLabel").textContent=r.type==="phased"?`Week ${wn} · ${dayName}`:`${r.name} · ${dayName}`;
+  if(r.type!=="phased"&&routineExpired(r)){
+    document.getElementById("todayTitle").textContent="Routine Complete 🏁";
+    document.getElementById("todaySubtitle").textContent=`${r.durationWeeks}-week duration finished`;
+    document.getElementById("todayBody").innerHTML=`<div class="rest-card"><div style="font-size:44px;margin-bottom:12px">🎉</div><h3 style="font-size:17px;font-weight:700;margin-bottom:8px">Nice work finishing "${r.name}"</h3><p style="font-size:13px;color:var(--muted);line-height:1.7">Head to the Routines tab to renew this one for another cycle, or start something new.</p><button class="primary-btn" style="margin-top:16px" onclick="switchTab('routines',document.querySelectorAll('.tab')[3])">Go to Routines</button></div>`;
+    return;
+  }
   if(!isW){
     document.getElementById("todayTitle").textContent="Rest Day 🛌";
     document.getElementById("todaySubtitle").textContent="Recovery is part of the program";
-    document.getElementById("todayBody").innerHTML=`<div class="rest-card"><div style="font-size:44px;margin-bottom:12px">🧘</div><h3 style="font-size:17px;font-weight:700;margin-bottom:8px">Active Rest</h3><p style="font-size:13px;color:var(--muted);line-height:1.7">Your muscles grow during rest. Take a walk, stretch, or relax. No gym today.</p><div style="margin-top:14px;font-size:13px;color:var(--accent);font-weight:600">Next workout: ${nextWD()}</div></div>`;
+    document.getElementById("todayBody").innerHTML=`<div class="rest-card"><div style="font-size:44px;margin-bottom:12px">🧘</div><h3 style="font-size:17px;font-weight:700;margin-bottom:8px">Active Rest</h3><p style="font-size:13px;color:var(--muted);line-height:1.7">Your muscles grow during rest. Take a walk, stretch, or relax. No gym today.</p><div style="margin-top:14px;font-size:13px;color:var(--accent);font-weight:600">Next workout: ${nextWD(days)}</div></div>`;
     return;
   }
-  document.getElementById("todayTitle").textContent=ph.label;
-  document.getElementById("todaySubtitle").textContent=`${ph.exercises.length} exercises · ~25–30 min · 60 sec rest`;
+  let exercises;
+  if(r.type==="phased"){
+    const ph=PHASES[phaseIdx(wn)];
+    document.getElementById("todayTitle").textContent=ph.label;
+    document.getElementById("todaySubtitle").textContent=`${ph.exercises.length} exercises · ~25–30 min · 60 sec rest`;
+    exercises=ph.exercises;
+  }else{
+    document.getElementById("todayTitle").textContent=r.name;
+    document.getElementById("todaySubtitle").textContent=`${r.exercises.length} exercises · 60 sec rest`;
+    exercises=r.exercises;
+  }
   let html="";
-  ph.exercises.forEach((ex,i)=>{
+  exercises.forEach((ex,i)=>{
     const d=exDone.includes(i);
     html+=`<div class="ex-card ${d?"done":""}" id="ec${i}"><button class="ex-check" onclick="toggleEx(${i})">${d?"✓":""}</button><div style="flex:1"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.detail}</div></div><span class="ex-tag" style="background:${ex.color}20;color:${ex.color}">${ex.tag}</span></div>`;
   });
@@ -249,13 +338,25 @@ function markComplete(){if(!state.completedDays.includes(td())){state.completedD
 // Progress
 function renderProgress(){
   const dates=weekDates(),st=streak(),wn=weekNum(),wd=dates.filter(d=>state.completedDays.includes(d)).length;
-  document.getElementById("weekGrid").innerHTML=dates.map((date,i)=>{const d=state.completedDays.includes(date),r=!WD.has(i),t=date===td();return`<div class="wday ${d?"done":""} ${r?"rest":""} ${t?"today":""}"><div class="wday-lbl">${DAYS[i]}</div><div class="wday-dot">${d?"✓":r?"–":""}</div></div>`}).join("");
+  const days=activeDays();
+  document.getElementById("weekGrid").innerHTML=dates.map((date,i)=>{const d=state.completedDays.includes(date),r=!days.has(i),t=date===td();return`<div class="wday ${d?"done":""} ${r?"rest":""} ${t?"today":""}"><div class="wday-lbl">${DAYS[i]}</div><div class="wday-dot">${d?"✓":r?"–":""}</div></div>`}).join("");
   document.getElementById("statGrid").innerHTML=[{v:wd,l:"This week",c:"var(--green)"},{v:st,l:"Day streak 🔥",c:"var(--yellow)"},{v:wn,l:"Current week",c:"var(--accent)"},{v:state.completedDays.length,l:"Total sessions",c:"var(--red)"}].map(s=>`<div class="stat-card"><div class="stat-val" style="color:${s.c}">${s.v}</div><div class="stat-lbl">${s.l}</div></div>`).join("");
 }
 // Plan
 function renderPlan(){
-  const cp=phaseIdx(weekNum()),dm=[1,2,3,4,5,6,0];
-  document.getElementById("planBody").innerHTML=PHASES.map((ph,pi)=>`<div class="phase-block"><div style="font-size:14px;font-weight:700;color:${pi===cp?"var(--accent)":"var(--text)"};margin-bottom:4px">${ph.label}${pi===cp?`<span style="font-size:9px;background:var(--accent-dim);color:var(--accent);padding:2px 7px;border-radius:20px;margin-left:6px;vertical-align:middle">Current</span>`:""}</div><div style="font-size:11px;color:var(--muted);margin-bottom:12px">${ph.weeks} · ${ph.desc}</div>${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day,di)=>{const iw=WD.has(dm[di]);return`<div class="plan-row"><div class="plan-day">${day}</div><div style="flex:1">${iw?`<div style="font-size:12px;font-weight:600;margin-bottom:3px">Full Body Strength</div><div style="font-size:11px;color:var(--muted);line-height:1.7">${ph.exercises.map(e=>e.name+" · "+e.detail).join(" / ")}</div>`:`<span class="rest-badge">Rest</span>`}</div></div>`}).join("")}</div>`).join("");
+  const r=activeRoutine();
+  if(r.type==="phased"){
+    const cp=phaseIdx(weekNum()),dm=[1,2,3,4,5,6,0],days=activeDays();
+    document.getElementById("planBody").innerHTML=PHASES.map((ph,pi)=>`<div class="phase-block"><div style="font-size:14px;font-weight:700;color:${pi===cp?"var(--accent)":"var(--text)"};margin-bottom:4px">${ph.label}${pi===cp?`<span style="font-size:9px;background:var(--accent-dim);color:var(--accent);padding:2px 7px;border-radius:20px;margin-left:6px;vertical-align:middle">Current</span>`:""}</div><div style="font-size:11px;color:var(--muted);margin-bottom:12px">${ph.weeks} · ${ph.desc}</div>${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day,di)=>{const iw=days.has(dm[di]);return`<div class="plan-row"><div class="plan-day">${day}</div><div style="flex:1">${iw?`<div style="font-size:12px;font-weight:600;margin-bottom:3px">Full Body Strength</div><div style="font-size:11px;color:var(--muted);line-height:1.7">${ph.exercises.map(e=>e.name+" · "+e.detail).join(" / ")}</div>`:`<span class="rest-badge">Rest</span>`}</div></div>`}).join("")}</div>`).join("");
+    return;
+  }
+  // Custom routine plan view
+  const daysSet=new Set(r.days),wn=routineWeekNum(r),expired=routineExpired(r);
+  const durLabel=r.durationWeeks?`Week ${Math.min(wn,r.durationWeeks)} of ${r.durationWeeks}`:"Ongoing · no end date";
+  let html=`<div class="card"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${r.name}</div><div style="font-size:11px;color:var(--muted)">${r.days.length} day${r.days.length===1?"":"s"}/week · ${durLabel}</div></div>`;
+  if(expired)html+=`<div class="highlight" style="border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.06);margin-bottom:14px"><strong style="color:var(--red)">Duration complete.</strong> Renew or replace this routine from the Routines tab.</div>`;
+  html+=DAYS.map((day,di)=>{const iw=daysSet.has(di);return`<div class="plan-row"><div class="plan-day">${day}</div><div style="flex:1">${iw?`<div style="font-size:11px;color:var(--muted);line-height:1.7">${r.exercises.map(e=>e.name+" · "+e.detail).join(" / ")}</div>`:`<span class="rest-badge">Rest</span>`}</div></div>`}).join("");
+  document.getElementById("planBody").innerHTML=html;
 }
 // Log
 let selMood="🙂";
@@ -263,8 +364,116 @@ function initMoods(){document.getElementById("moodRow").innerHTML=MOODS.map(m=>`
 function selM(m){selMood=m;document.querySelectorAll(".mood-btn").forEach((b,i)=>b.classList.toggle("sel",MOODS[i]===m))}
 function saveLog(){const n=document.getElementById("logNote").value.trim(),e=parseInt(document.getElementById("effortSlider").value);if(!n){showToast("Write a note first!");return}state.logs.unshift({date:td(),mood:selMood,effort:e,note:n});if(state.logs.length>30)state.logs=state.logs.slice(0,30);save();document.getElementById("logNote").value="";renderLogList();showToast("Entry saved ✓")}
 function renderLogList(){const el=document.getElementById("logList");if(!state.logs.length){el.innerHTML=`<div style="text-align:center;padding:28px 0;color:var(--muted);font-size:13px">No entries yet. Log after your first session.</div>`;return}el.innerHTML=state.logs.map(l=>`<div class="log-entry"><div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:10px;color:var(--muted)">${l.date}</span><span style="font-size:18px">${l.mood}</span></div><div style="font-size:12px;line-height:1.6">${l.note}</div><div style="font-size:11px;color:var(--yellow);margin-top:5px">${"★".repeat(Math.round(l.effort/2))}${"☆".repeat(5-Math.round(l.effort/2))} ${l.effort}/10</div></div>`).join("")}
+// Routines
+function renderRoutines(){
+  const activeId=state.activeRoutineId;
+  let html=`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-weight:700;font-size:13px;margin-bottom:3px">12-Week Foundation → Build → Intensity</div><div style="font-size:11px;color:var(--muted)">Mon / Wed / Fri · phased strength program</div></div>${activeId==="default"?'<span class="ex-tag" style="background:var(--green-dim);color:var(--green);flex-shrink:0">ACTIVE</span>':`<button class="save-btn" style="width:auto;padding:9px 14px;margin:0;flex-shrink:0" onclick="activateRoutine('default')">Activate</button>`}</div>`;
+  html+=state.routines.map(r=>{
+    const isActive=r.id===activeId;
+    return `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:700;font-size:13px">${r.name}</div>${isActive?'<span class="ex-tag" style="background:var(--green-dim);color:var(--green)">ACTIVE</span>':""}</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">${r.days.length} day${r.days.length===1?"":"s"}/week (${r.days.slice().sort().map(d=>DAYS[d]).join(", ")})</div><div style="font-size:11px;color:var(--muted)">${r.durationWeeks?r.durationWeeks+"-week duration":"Ongoing"} · ${r.exercises.length} exercises</div><div class="routine-actions">${isActive?"":`<button class="save-btn" style="flex:1" onclick="activateRoutine('${r.id}')">Activate</button>`}<button class="save-btn" style="flex:1" onclick="editRoutine('${r.id}')">Edit</button><button class="save-btn" style="flex:1;color:var(--red)" onclick="deleteRoutine('${r.id}')">Delete</button></div></div>`;
+  }).join("");
+  document.getElementById("routineList").innerHTML=html;
+}
+let builder=null;
+function openBuilder(editId){
+  if(editId){
+    const r=state.routines.find(x=>x.id===editId);
+    builder={editId,name:r.name,selected:r.exercises.map(e=>({...e})),days:new Set(r.days),ongoing:!r.durationWeeks,durationWeeks:r.durationWeeks||4};
+  }else{
+    builder={editId:null,name:"",selected:[],days:new Set(),ongoing:true,durationWeeks:4};
+  }
+  document.getElementById("newRoutineBtn").style.display="none";
+  renderBuilderUI();
+}
+function closeBuilder(){builder=null;document.getElementById("builderWrap").innerHTML="";document.getElementById("newRoutineBtn").style.display="block"}
+function isSelected(name){return builder.selected.some(e=>e.name===name)}
+function toggleExLibItem(name){
+  const lib=EXLIB.find(e=>e.name===name);
+  if(isSelected(name)){builder.selected=builder.selected.filter(e=>e.name!==name)}
+  else{builder.selected.push({name:lib.name,detail:lib.defDetail,tag:lib.tag,color:lib.color})}
+  renderBuilderUI();
+}
+function updateExDetail(name,val){const e=builder.selected.find(e=>e.name===name);if(e)e.detail=val}
+function removeSelectedExercise(name){builder.selected=builder.selected.filter(e=>e.name!==name);renderBuilderUI()}
+function addCustomExercise(){
+  const nameEl=document.getElementById("customExName"),detEl=document.getElementById("customExDetail");
+  const n=nameEl.value.trim(),d=detEl.value.trim()||"3 × 12";
+  if(!n){showToast("Enter an exercise name first");return}
+  if(builder.selected.some(e=>e.name===n)){showToast("Already added");return}
+  builder.selected.push({name:n,detail:d,tag:"custom",color:"#94a3b8"});
+  nameEl.value="";detEl.value="";
+  renderBuilderUI();
+}
+function toggleDay(i){if(builder.days.has(i))builder.days.delete(i);else builder.days.add(i);renderBuilderUI()}
+function toggleOngoing(){builder.ongoing=!builder.ongoing;renderBuilderUI()}
+function updateDurationWeeks(val){builder.durationWeeks=Math.max(1,parseInt(val)||1)}
+function renderBuilderUI(){
+  const libRows=EXLIB.map(ex=>{
+    const sel=isSelected(ex.name),cur=builder.selected.find(e=>e.name===ex.name);
+    return `<div class="exlib-row"><label class="exlib-hdr"><input type="checkbox" ${sel?"checked":""} onchange="toggleExLibItem('${ex.name}')"><div style="flex:1"><div style="font-size:12px;font-weight:600">${ex.name}</div><span class="ex-tag" style="background:${ex.color}20;color:${ex.color};font-size:8px">${ex.tag}</span></div></label>${sel?`<input class="exlib-detail-input" value="${cur.detail}" oninput="updateExDetail('${ex.name}',this.value)" placeholder="sets × reps">`:""}</div>`;
+  }).join("");
+  const customSelected=builder.selected.filter(e=>e.tag==="custom").map(e=>`<div class="exlib-row"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;font-weight:600">${e.name} <span style="color:var(--muted);font-weight:400">· ${e.detail}</span></div><span class="remove-x" onclick="removeSelectedExercise('${e.name}')">✕</span></div></div>`).join("");
+  const dayChips=DAYS.map((d,i)=>`<div class="day-chip ${builder.days.has(i)?"sel":""}" onclick="toggleDay(${i})">${d}</div>`).join("");
+  const html=`<div class="builder-box">
+    <div class="form-label">Routine name</div>
+    <input class="name-input" id="routineNameInput" value="${builder.name}" oninput="builder.name=this.value" placeholder="e.g. Swim-day maintenance lifts">
+    <div class="form-label">Which days? (${builder.days.size} day${builder.days.size===1?"":"s"}/week)</div>
+    <div class="day-chip-row">${dayChips}</div>
+    <div class="form-label">Duration</div>
+    <div class="duration-row"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" ${builder.ongoing?"checked":""} onchange="toggleOngoing()" style="accent-color:var(--accent)">Ongoing (no end date)</label></div>
+    ${builder.ongoing?"":`<div class="duration-row">Fixed length: <input class="small-num-input" type="number" min="1" value="${builder.durationWeeks}" oninput="updateDurationWeeks(this.value)"> weeks</div>`}
+    <div class="form-label" style="margin-top:14px">Exercises (${builder.selected.length} selected)</div>
+    <div>${libRows}</div>
+    ${customSelected?`<div class="sec-lbl" style="margin:10px 0 4px">Your custom exercises</div>${customSelected}`:""}
+    <div class="custom-add-row"><input id="customExName" placeholder="Custom exercise name"><input id="customExDetail" placeholder="e.g. 3 × 12" style="max-width:90px"><button class="add-chip-btn" onclick="addCustomExercise()">Add</button></div>
+    <div class="builder-actions"><button class="save-btn" style="flex:1;color:var(--red)" onclick="closeBuilder()">Cancel</button><button class="primary-btn" style="flex:1" onclick="saveBuilder()">Save & Activate</button></div>
+  </div>`;
+  document.getElementById("builderWrap").innerHTML=html;
+}
+function saveBuilder(){
+  const name=(builder.name||"").trim();
+  if(!name){showToast("Give your routine a name");return}
+  if(builder.days.size===0){showToast("Pick at least one workout day");return}
+  if(builder.selected.length===0){showToast("Add at least one exercise");return}
+  const id=builder.editId||("r"+Date.now());
+  const routine={id,name,exercises:builder.selected,days:[...builder.days],durationWeeks:builder.ongoing?null:builder.durationWeeks};
+  if(builder.editId){
+    const idx=state.routines.findIndex(r=>r.id===id);
+    state.routines[idx]=routine;
+  }else{
+    state.routines.push(routine);
+  }
+  state.activeRoutineId=id;
+  state.routineStartDates[id]=td();
+  save();
+  closeBuilder();
+  renderRoutines();
+  updateHdrSubtitle();
+  renderToday();
+  showToast(`"${name}" is now active ✓`);
+}
+function activateRoutine(id){
+  state.activeRoutineId=id;
+  if(!state.routineStartDates[id])state.routineStartDates[id]=td();
+  save();
+  renderRoutines();
+  updateHdrSubtitle();
+  renderToday();
+  showToast("Routine activated ✓");
+}
+function editRoutine(id){openBuilder(id)}
+function deleteRoutine(id){
+  state.routines=state.routines.filter(r=>r.id!==id);
+  if(state.activeRoutineId===id){state.activeRoutineId="default";}
+  delete state.routineStartDates[id];
+  save();
+  renderRoutines();
+  updateHdrSubtitle();
+  renderToday();
+  showToast("Routine deleted");
+}
 // Tabs
-function switchTab(n,btn){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));document.getElementById("sec-"+n).classList.add("active");btn.classList.add("active");if(n==="progress")renderProgress();if(n==="plan")renderPlan();if(n==="log")renderLogList()}
+function switchTab(n,btn){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));document.getElementById("sec-"+n).classList.add("active");btn.classList.add("active");if(n==="progress")renderProgress();if(n==="plan")renderPlan();if(n==="routines")renderRoutines();if(n==="log")renderLogList()}
 // Header
 function updateHeader(){document.getElementById("streakNum").textContent=streak();document.getElementById("totalNum").textContent=state.completedDays.length}
 // Toast
@@ -272,7 +481,7 @@ function showToast(msg){const t=document.getElementById("toast");t.textContent=m
 // SW
 if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
 // Init
-updateHeader();updateNotifyBtn();renderToday();initMoods();
+updateHeader();updateNotifyBtn();updateHdrSubtitle();renderToday();initMoods();
 if(state.notifEnabled)scheduleNext();
 </script>
 </body>
